@@ -36,7 +36,7 @@
     return CGRectContainsPoint(self.bounds, point);
 }
 
-- (UIView *)createcoverView
+- (UIView *)createCoverView
 {
     UIView *coverView = [[UIView alloc] init];
     
@@ -100,7 +100,7 @@
     
     CGRect frame = self.frame;
     
-    UIView *coverView = [self createcoverView];
+    UIView *coverView = [self createCoverView];
     coverView.frame = frame;
     [self addSubview:coverView];
     objc_setAssociatedObject(self, "coverView", coverView, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
