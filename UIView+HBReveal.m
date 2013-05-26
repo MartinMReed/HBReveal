@@ -22,12 +22,13 @@
 - (BOOL)pointInside:(CGPoint)point withEvent:(UIEvent *)event
 {
     UIView *containerView = objc_getAssociatedObject(self, "containerView");
+    
     if (containerView)
     {
         CGRect bounds = self.bounds;
         bounds.size = CGSizeMake(bounds.size.width + containerView.bounds.size.width, bounds.size.height);
-        if (CGRectContainsPoint(bounds, point))
-        {
+        
+        if (CGRectContainsPoint(bounds, point)) {
             return YES;
         }
     }
@@ -40,21 +41,22 @@
     UIView *coverView = [[UIView alloc] init];
     
     UITapGestureRecognizer *tapGestureRecognizer = [[UITapGestureRecognizer alloc] initWithTarget:self
-                                                                                           action:@selector(hide:)];
+                                                                                           action:@selector(hide)];
     [coverView addGestureRecognizer:tapGestureRecognizer];
     [tapGestureRecognizer release];
     
     UIPanGestureRecognizer *panGestureRecognizer = [[UIPanGestureRecognizer alloc] initWithTarget:self
-                                                                                           action:@selector(hide:)];
+                                                                                           action:@selector(hide)];
     [coverView addGestureRecognizer:panGestureRecognizer];
     [panGestureRecognizer release];
     
     return [coverView autorelease];
 }
 
-- (void)hide:(UITapGestureRecognizer *)recognizer
+- (void)hide
 {
     UIView *coverView = objc_getAssociatedObject(self, "coverView");
+    
     for (UIGestureRecognizer *gestureRecognizer in coverView.gestureRecognizers) {
         [coverView removeGestureRecognizer:gestureRecognizer];
     }
@@ -70,6 +72,7 @@
         CGRect contentFrame = contentView.frame;
         contentFrame.origin = CGPointMake(-1 * contentFrame.size.width, contentFrame.origin.y);
         contentView.frame = contentFrame;
+        
     } completion:^(BOOL finished){
         
         UIView *coverView = objc_getAssociatedObject(self, "coverView");
@@ -82,6 +85,12 @@
 
 - (void)reveal:(UIView *)contentView
 {
+    if (!contentView)
+    {
+        [self hide];
+        return;
+    }
+    
     UIView *containerView = [[UIView alloc] init];
     [containerView setAutoresizesSubviews:false];
     [containerView setClipsToBounds:true];
