@@ -26,7 +26,8 @@
     if (containerView)
     {
         CGRect bounds = self.bounds;
-        bounds.size = CGSizeMake(bounds.size.width + containerView.bounds.size.width, bounds.size.height);
+        CGRect containerBounds = containerView.bounds;
+        bounds.size = CGSizeMake(bounds.size.width + containerBounds.size.width, bounds.size.height);
         
         if (CGRectContainsPoint(bounds, point)) {
             return YES;
@@ -76,11 +77,25 @@
     } completion:^(BOOL finished){
         
         UIView *coverView = objc_getAssociatedObject(self, "coverView");
+        objc_setAssociatedObject(self, "coverView", nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
         [coverView removeFromSuperview];
         
         UIView *containerView = objc_getAssociatedObject(self, "containerView");
+        objc_setAssociatedObject(self, "coverView", nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
         [containerView removeFromSuperview];
     }];
+}
+
+- (CGRect)statusBarFrame
+{
+    UIViewController *rootViewController = self.window.rootViewController;
+    if ([rootViewController respondsToSelector:@selector(isNavigationBarHidden)]) {
+        if ([rootViewController performSelector:@selector(isNavigationBarHidden)]) {
+            return CGRectMake(0, 0, 0, 0);
+        }
+    }
+    
+    return [[UIApplication sharedApplication] statusBarFrame];
 }
 
 - (void)reveal:(UIView *)contentView
@@ -100,8 +115,13 @@
     
     CGRect frame = self.frame;
     
+    // account for 20px header when navigation status bar is not hidden
+    CGRect statusBarFrame = [self statusBarFrame];
+    
     UIView *coverView = [self createCoverView];
-    coverView.frame = frame;
+    CGRect coverFrame = frame;
+    coverFrame.origin = CGPointMake(frame.origin.x, frame.origin.y - statusBarFrame.size.height);
+    coverView.frame = coverFrame;
     [self addSubview:coverView];
     objc_setAssociatedObject(self, "coverView", coverView, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     
@@ -111,7 +131,7 @@
     
     CGRect containerFrame = containerView.frame;
     containerFrame.size = contentView.frame.size;
-    containerFrame.origin = CGPointMake(frame.size.width, frame.origin.y);
+    containerFrame.origin = CGPointMake(frame.size.width, frame.origin.y - statusBarFrame.size.height);
     containerView.frame = containerFrame;
     
     [containerView release];
@@ -126,7 +146,7 @@
         frame.origin = CGPointMake(-1 * contentFrame.size.width, frame.origin.y);
         self.frame = frame;
         
-        contentFrame.origin = CGPointMake(0, frame.origin.y);
+        contentFrame.origin = CGPointMake(0, contentFrame.origin.y);
         contentView.frame = contentFrame;
         
     } completion:^(BOOL finished){}];
