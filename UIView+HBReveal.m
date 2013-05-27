@@ -99,8 +99,8 @@
     }
     
     UIView *containerView = [[UIView alloc] init];
-    [containerView setAutoresizesSubviews:false];
-    [containerView setClipsToBounds:true];
+    [containerView setAutoresizesSubviews:NO];
+    [containerView setClipsToBounds:YES];
     [containerView addSubview:contentView];
     [self addSubview:containerView];
     objc_setAssociatedObject(self, CONTAINER_VIEW, containerView, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
