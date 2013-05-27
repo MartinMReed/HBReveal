@@ -17,8 +17,12 @@
 
 @interface ViewController : UIViewController
 
-- (IBAction)revealSidebar:(id)sender;
+@property (strong, nonatomic) IBOutlet UIView *outerDrawerView;
 
+- (IBAction)revealSidebar:(id)sender;
 - (IBAction)hideSidebar:(id)sender;
+
+- (IBAction)revealDrawer:(id)sender;
+- (IBAction)hideDrawer:(id)sender;
 
 @end

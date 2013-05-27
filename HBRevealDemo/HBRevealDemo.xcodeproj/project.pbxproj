@@ -20,6 +20,7 @@
 		0CC888061752C0CB0081745B /* ViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = 0CC888041752C0CB0081745B /* ViewController.xib */; };
 		0CC8880F1752C14D0081745B /* UIView+HBReveal.m in Sources */ = {isa = PBXBuildFile; fileRef = 0CC8880E1752C14D0081745B /* UIView+HBReveal.m */; };
 		0CC888111752C16D0081745B /* SidebarView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 0CC888101752C16D0081745B /* SidebarView.xib */; };
+		0CC888131752D2380081745B /* DrawerView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 0CC888121752D2380081745B /* DrawerView.xib */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -42,6 +43,7 @@
 		0CC8880D1752C14D0081745B /* UIView+HBReveal.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "UIView+HBReveal.h"; path = "../../UIView+HBReveal.h"; sourceTree = "<group>"; };
 		0CC8880E1752C14D0081745B /* UIView+HBReveal.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = "UIView+HBReveal.m"; path = "../../UIView+HBReveal.m"; sourceTree = "<group>"; };
 		0CC888101752C16D0081745B /* SidebarView.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = SidebarView.xib; sourceTree = "<group>"; };
+		0CC888121752D2380081745B /* DrawerView.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = DrawerView.xib; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -94,6 +96,7 @@
 				0CC888011752C0CB0081745B /* ViewController.h */,
 				0CC888021752C0CB0081745B /* ViewController.m */,
 				0CC888041752C0CB0081745B /* ViewController.xib */,
+				0CC888121752D2380081745B /* DrawerView.xib */,
 				0CC888101752C16D0081745B /* SidebarView.xib */,
 				0CC887F01752C0CB0081745B /* Supporting Files */,
 			);
@@ -180,6 +183,7 @@
 				0CC888001752C0CB0081745B /* Default-568h@2x.png in Resources */,
 				0CC888061752C0CB0081745B /* ViewController.xib in Resources */,
 				0CC888111752C16D0081745B /* SidebarView.xib in Resources */,
+				0CC888131752D2380081745B /* DrawerView.xib in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -314,6 +318,7 @@
 				0CC8880B1752C0CB0081745B /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};

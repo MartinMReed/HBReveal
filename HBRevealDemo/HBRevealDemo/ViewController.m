@@ -47,4 +47,16 @@
     [self.view reveal:nil];
 }
 
+- (IBAction)revealDrawer:(id)sender
+{
+    UIView *drawerView = [[[NSBundle mainBundle] loadNibNamed:@"DrawerView"
+                                                        owner:self options:nil] lastObject];
+    [self.outerDrawerView reveal:drawerView];
+}
+
+- (IBAction)hideDrawer:(id)sender
+{
+    [self.outerDrawerView reveal:nil];
+}
+
 @end

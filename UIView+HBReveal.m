@@ -17,11 +17,15 @@
 
 #import <objc/runtime.h>
 
+#define CONTAINER_VIEW "HBReveal:containerView"
+#define COVER_VIEW "HBReveal:coverView"
+#define ORIGINAL_FRAME "HBReveal:frame"
+
 @implementation UIView (HBReveal)
 
 - (BOOL)pointInside:(CGPoint)point withEvent:(UIEvent *)event
 {
-    UIView *containerView = objc_getAssociatedObject(self, "containerView");
+    UIView *containerView = objc_getAssociatedObject(self, CONTAINER_VIEW);
     
     if (containerView)
     {
@@ -56,7 +60,7 @@
 
 - (void)hide
 {
-    UIView *coverView = objc_getAssociatedObject(self, "coverView");
+    UIView *coverView = objc_getAssociatedObject(self, COVER_VIEW);
     
     for (UIGestureRecognizer *gestureRecognizer in coverView.gestureRecognizers) {
         [coverView removeGestureRecognizer:gestureRecognizer];
@@ -64,11 +68,11 @@
     
     [UIView animateWithDuration:0.25f animations:^{
         
-        CGRect frame = self.frame;
-        frame.origin = CGPointMake(0, frame.origin.y);
-        self.frame = frame;
+        NSValue *originalFrame = objc_getAssociatedObject(self, ORIGINAL_FRAME);
+        self.frame = [originalFrame CGRectValue];
+        objc_setAssociatedObject(self, ORIGINAL_FRAME, nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
         
-        UIView *containerView = objc_getAssociatedObject(self, "containerView");
+        UIView *containerView = objc_getAssociatedObject(self, CONTAINER_VIEW);
         UIView *contentView = [containerView.subviews objectAtIndex:0];
         CGRect contentFrame = contentView.frame;
         contentFrame.origin = CGPointMake(-1 * contentFrame.size.width, contentFrame.origin.y);
@@ -76,26 +80,14 @@
         
     } completion:^(BOOL finished){
         
-        UIView *coverView = objc_getAssociatedObject(self, "coverView");
-        objc_setAssociatedObject(self, "coverView", nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+        UIView *coverView = objc_getAssociatedObject(self, COVER_VIEW);
+        objc_setAssociatedObject(self, COVER_VIEW, nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
         [coverView removeFromSuperview];
         
-        UIView *containerView = objc_getAssociatedObject(self, "containerView");
-        objc_setAssociatedObject(self, "coverView", nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+        UIView *containerView = objc_getAssociatedObject(self, CONTAINER_VIEW);
+        objc_setAssociatedObject(self, COVER_VIEW, nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
         [containerView removeFromSuperview];
     }];
-}
-
-- (CGRect)statusBarFrame
-{
-    UIViewController *rootViewController = self.window.rootViewController;
-    if ([rootViewController respondsToSelector:@selector(isNavigationBarHidden)]) {
-        if ([rootViewController performSelector:@selector(isNavigationBarHidden)]) {
-            return CGRectMake(0, 0, 0, 0);
-        }
-    }
-    
-    return [[UIApplication sharedApplication] statusBarFrame];
 }
 
 - (void)reveal:(UIView *)contentView
@@ -111,19 +103,17 @@
     [containerView setClipsToBounds:true];
     [containerView addSubview:contentView];
     [self addSubview:containerView];
-    objc_setAssociatedObject(self, "containerView", containerView, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    objc_setAssociatedObject(self, CONTAINER_VIEW, containerView, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     
     CGRect frame = self.frame;
-    
-    // account for 20px header when navigation status bar is not hidden
-    CGRect statusBarFrame = [self statusBarFrame];
+    objc_setAssociatedObject(self, ORIGINAL_FRAME, [NSValue valueWithCGRect:frame], OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     
     UIView *coverView = [self createCoverView];
     CGRect coverFrame = frame;
-    coverFrame.origin = CGPointMake(frame.origin.x, frame.origin.y - statusBarFrame.size.height);
+    coverFrame.origin = CGPointMake(0, 0);
     coverView.frame = coverFrame;
     [self addSubview:coverView];
-    objc_setAssociatedObject(self, "coverView", coverView, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    objc_setAssociatedObject(self, COVER_VIEW, coverView, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     
     CGRect contentFrame = contentView.frame;
     contentFrame.origin = CGPointMake(-1 * contentFrame.size.width, contentFrame.origin.y);
@@ -131,19 +121,19 @@
     
     CGRect containerFrame = containerView.frame;
     containerFrame.size = contentView.frame.size;
-    containerFrame.origin = CGPointMake(frame.size.width, frame.origin.y - statusBarFrame.size.height);
+    containerFrame.origin = CGPointMake(frame.size.width, 0);
     containerView.frame = containerFrame;
     
     [containerView release];
     
     [UIView animateWithDuration:0.25f animations:^{
         
-        UIView *containerView = objc_getAssociatedObject(self, "containerView");
+        UIView *containerView = objc_getAssociatedObject(self, CONTAINER_VIEW);
         UIView *contentView = [containerView.subviews objectAtIndex:0];
         CGRect contentFrame = contentView.frame;
         
         CGRect frame = self.frame;
-        frame.origin = CGPointMake(-1 * contentFrame.size.width, frame.origin.y);
+        frame.origin = CGPointMake(frame.origin.x - contentFrame.size.width, frame.origin.y);
         self.frame = frame;
         
         contentFrame.origin = CGPointMake(0, contentFrame.origin.y);
