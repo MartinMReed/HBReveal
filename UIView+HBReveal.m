@@ -51,11 +51,22 @@ static const NSString *ORIGINAL_FRAME;
     [tapGestureRecognizer release];
     
     UIPanGestureRecognizer *panGestureRecognizer = [[UIPanGestureRecognizer alloc] initWithTarget:self
-                                                                                           action:@selector(hide)];
+                                                                                           action:@selector(panHide:)];
     [coverView addGestureRecognizer:panGestureRecognizer];
     [panGestureRecognizer release];
     
     return [coverView autorelease];
+}
+
+- (void)panHide:(UIPanGestureRecognizer *)gestureRecognizer
+{
+    UIView *coverView = objc_getAssociatedObject(self, &COVER_VIEW);
+    CGPoint translation = [gestureRecognizer translationInView:coverView];
+    
+    if (fabsf(translation.x) > fabsf(translation.y))
+    {
+        [self hide];
+    }
 }
 
 - (void)hide
