@@ -96,7 +96,7 @@ static const NSString *ORIGINAL_FRAME;
         [coverView removeFromSuperview];
         
         UIView *containerView = objc_getAssociatedObject(self, &CONTAINER_VIEW);
-        objc_setAssociatedObject(self, &COVER_VIEW, nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+        objc_setAssociatedObject(self, &CONTAINER_VIEW, nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
         [containerView removeFromSuperview];
     }];
 }
