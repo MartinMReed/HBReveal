@@ -17,6 +17,6 @@
 
 @interface UIView (HBReveal)
 
-- (void)reveal:(UIView *)view;
+- (void)reveal:(UIView *)contentView hideCallback:(void (^)(UIView *))hideCallback;
 
 @end

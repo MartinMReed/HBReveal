@@ -20,6 +20,7 @@
 static const NSString *CONTAINER_VIEW;
 static const NSString *COVER_VIEW;
 static const NSString *ORIGINAL_FRAME;
+static const NSString *HIDE_CALLBACK;
 
 @implementation UIView (HBReveal)
 
@@ -92,21 +93,33 @@ static const NSString *ORIGINAL_FRAME;
     } completion:^(BOOL finished){
         
         UIView *coverView = objc_getAssociatedObject(self, &COVER_VIEW);
-        objc_setAssociatedObject(self, &COVER_VIEW, nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
         [coverView removeFromSuperview];
+        objc_setAssociatedObject(self, &COVER_VIEW, nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
         
         UIView *containerView = objc_getAssociatedObject(self, &CONTAINER_VIEW);
-        objc_setAssociatedObject(self, &CONTAINER_VIEW, nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+        
+        void (^hideCallback)(UIView *) = objc_getAssociatedObject(self, &HIDE_CALLBACK);
+        if (hideCallback)
+        {
+            hideCallback([[containerView subviews] firstObject]);
+            objc_setAssociatedObject(self, &HIDE_CALLBACK, nil, OBJC_ASSOCIATION_COPY_NONATOMIC);
+        }
+        
         [containerView removeFromSuperview];
+        objc_setAssociatedObject(self, &CONTAINER_VIEW, nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     }];
 }
 
-- (void)reveal:(UIView *)contentView
+- (void)reveal:(UIView *)contentView hideCallback:(void (^)(UIView *))hideCallback
 {
     if (!contentView)
     {
         [self hide];
         return;
+    }
+    
+    if (hideCallback) {
+        objc_setAssociatedObject(self, &HIDE_CALLBACK, hideCallback, OBJC_ASSOCIATION_COPY_NONATOMIC);
     }
     
     UIView *containerView = [[UIView alloc] init];
