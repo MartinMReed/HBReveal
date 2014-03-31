@@ -19,10 +19,12 @@
 
 @property (strong, nonatomic) IBOutlet UIView *outerDrawerView;
 
-- (IBAction)revealSidebar:(id)sender;
+- (IBAction)revealSidebarLeft:(id)sender;
+- (IBAction)revealSidebarRight:(id)sender;
 - (IBAction)hideSidebar:(id)sender;
 
-- (IBAction)revealDrawer:(id)sender;
+- (IBAction)revealDrawerLeft:(id)sender;
+- (IBAction)revealDrawerRight:(id)sender;
 - (IBAction)hideDrawer:(id)sender;
 
 @end

@@ -1,4 +1,4 @@
-/* Copyright (c) 2013 Martin M Reed
+/* Copyright (c) 2013-2014 Martin M Reed
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,13 @@
 
 #import <Foundation/Foundation.h>
 
+typedef NS_ENUM(NSUInteger, HBRevealSlide) {
+    kSlideLeft,
+    kSlideRight
+};
+
 @interface UIView (HBReveal)
 
-- (void)reveal:(UIView *)contentView hideCallback:(void (^)(UIView *))hideCallback;
+- (void)reveal:(UIView *)contentView slide:(HBRevealSlide)slide hideCallback:(void (^)(UIView *))hideCallback;
 
 @end

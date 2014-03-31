@@ -17,46 +17,44 @@
 
 #import "UIView+HBReveal.h"
 
-@interface ViewController ()
-
-@end
-
 @implementation ViewController
 
-- (void)viewDidLoad
-{
-    [super viewDidLoad];
-	// Do any additional setup after loading the view, typically from a nib.
-}
-
-- (void)didReceiveMemoryWarning
-{
-    [super didReceiveMemoryWarning];
-    // Dispose of any resources that can be recreated.
-}
-
-- (IBAction)revealSidebar:(id)sender
+- (IBAction)revealSidebarLeft:(id)sender
 {
     UIView *sidebarView = [[[NSBundle mainBundle] loadNibNamed:@"SidebarView"
                                                          owner:self options:nil] lastObject];
-    [self.view reveal:sidebarView];
+    [self.view reveal:sidebarView slide:kSlideRight hideCallback:nil];
+}
+
+- (IBAction)revealSidebarRight:(id)sender
+{
+    UIView *sidebarView = [[[NSBundle mainBundle] loadNibNamed:@"SidebarView"
+                                                         owner:self options:nil] lastObject];
+    [self.view reveal:sidebarView slide:kSlideLeft hideCallback:nil];
 }
 
 - (IBAction)hideSidebar:(id)sender
 {
-    [self.view reveal:nil];
+    [self.view reveal:nil slide:kSlideLeft hideCallback:nil];
 }
 
-- (IBAction)revealDrawer:(id)sender
+- (IBAction)revealDrawerLeft:(id)sender
 {
     UIView *drawerView = [[[NSBundle mainBundle] loadNibNamed:@"DrawerView"
                                                         owner:self options:nil] lastObject];
-    [self.outerDrawerView reveal:drawerView];
+    [self.outerDrawerView reveal:drawerView slide:kSlideRight hideCallback:nil];
+}
+
+- (IBAction)revealDrawerRight:(id)sender
+{
+    UIView *drawerView = [[[NSBundle mainBundle] loadNibNamed:@"DrawerView"
+                                                        owner:self options:nil] lastObject];
+    [self.outerDrawerView reveal:drawerView slide:kSlideLeft hideCallback:nil];
 }
 
 - (IBAction)hideDrawer:(id)sender
 {
-    [self.outerDrawerView reveal:nil];
+    [self.outerDrawerView reveal:nil slide:kSlideRight hideCallback:nil];
 }
 
 @end
