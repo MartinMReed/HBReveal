@@ -9,7 +9,7 @@ UIView *contentView = [[[NSBundle mainBundle] loadNibNamed:@"SidebarView"
 [self.view reveal:contentView slide:kSlideRight hideCallback:nil];
 
 // hide the sidebar
-[self.view reveal:nil slide:kSlideRight hideCallback:nil];
+[self.view conceal:YES/*animated*/];
 ```
 
 Demo:  

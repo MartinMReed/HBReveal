@@ -66,58 +66,10 @@ static const NSString *REVEAL_ENTRY;
     return CGRectContainsPoint(self.bounds, point);
 }
 
-- (void)panHide:(UIPanGestureRecognizer *)gestureRecognizer
-{
-    HBRevealEntry *revealEntry = objc_getAssociatedObject(self, &REVEAL_ENTRY);
-    UIView *coverView = revealEntry->coverView;
-    
-    CGPoint translation = [gestureRecognizer translationInView:coverView];
-    
-    if (fabsf(translation.x) > fabsf(translation.y)) {
-        [self hide];
-    }
-}
-
-- (void)hide
-{
-    HBRevealEntry *revealEntry = objc_getAssociatedObject(self, &REVEAL_ENTRY);
-    UIView *coverView = revealEntry->coverView;
-    
-    if (![coverView isUserInteractionEnabled]) return;
-    [coverView setUserInteractionEnabled:NO];
-    
-    [UIView animateWithDuration:0.25f animations:^{
-        
-        HBRevealEntry *revealEntry = objc_getAssociatedObject(self, &REVEAL_ENTRY);
-        UIView *containerView = revealEntry->containerView;
-        UIView *contentView = revealEntry->contentView;
-        
-        [containerView sendSubviewToBack:contentView];
-        
-        self.frame = revealEntry->originalFrame;
-        
-    } completion:^(BOOL finished){
-        
-        HBRevealEntry *revealEntry = objc_getAssociatedObject(self, &REVEAL_ENTRY);
-        UIView *containerView = revealEntry->containerView;
-        UIView *contentView = revealEntry->contentView;
-        
-        void (^hideCallback)(UIView *) = revealEntry->hideCallback;
-        if (hideCallback) {
-            hideCallback(contentView);
-        }
-        
-        [containerView.superview addSubview:self];
-        [containerView removeFromSuperview];
-        
-        objc_setAssociatedObject(self, &REVEAL_ENTRY, nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-    }];
-}
-
 - (void)reveal:(UIView *)contentView slide:(HBRevealSlide)slide hideCallback:(void (^)(UIView *))hideCallback
 {
     if (!contentView) {
-        [self hide];
+        [self conceal:YES];
         return;
     }
     
@@ -156,6 +108,7 @@ static const NSString *REVEAL_ENTRY;
     revealEntry->contentView = [contentView retain];
     revealEntry->coverView = [coverView retain];
     revealEntry->containerView = containerView;
+    revealEntry->slide = slide;
     revealEntry->originalFrame = frame;
     objc_setAssociatedObject(self, &REVEAL_ENTRY, revealEntry, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     [revealEntry release];
@@ -182,14 +135,91 @@ static const NSString *REVEAL_ENTRY;
 - (void)addHideGestures:(UIView *)view
 {
     UITapGestureRecognizer *tapGestureRecognizer = [[UITapGestureRecognizer alloc] initWithTarget:self
-                                                                                           action:@selector(hide)];
+                                                                                           action:@selector(handleTap:)];
     [view addGestureRecognizer:tapGestureRecognizer];
     [tapGestureRecognizer release];
     
     UIPanGestureRecognizer *panGestureRecognizer = [[UIPanGestureRecognizer alloc] initWithTarget:self
-                                                                                           action:@selector(panHide:)];
+                                                                                           action:@selector(handlePan:)];
     [view addGestureRecognizer:panGestureRecognizer];
     [panGestureRecognizer release];
+}
+
+- (void)handleTap:(UIPanGestureRecognizer *)gestureRecognizer
+{
+    if (gestureRecognizer.state == UIGestureRecognizerStateRecognized)
+    {
+        [self conceal:YES];
+    }
+}
+
+- (void)handlePan:(UIPanGestureRecognizer *)gestureRecognizer
+{
+    HBRevealEntry *revealEntry = objc_getAssociatedObject(self, &REVEAL_ENTRY);
+    UIView *coverView = revealEntry->coverView;
+    
+    CGPoint translation = [gestureRecognizer translationInView:coverView];
+    
+    if (fabsf(translation.x) > fabsf(translation.y))
+    {
+        HBRevealSlide slide = revealEntry->slide;
+        
+        if ((slide == kSlideLeft && translation.x > 0) ||
+            (slide == kSlideRight && translation.x < 0))
+        {
+            [self conceal:YES];
+        }
+    }
+}
+
+- (void)conceal:(BOOL)animated
+{
+    HBRevealEntry *revealEntry = objc_getAssociatedObject(self, &REVEAL_ENTRY);
+    UIView *coverView = revealEntry->coverView;
+    
+    if (![coverView isUserInteractionEnabled]) return;
+    [coverView setUserInteractionEnabled:NO];
+    
+    if (!animated) {
+        [self concealStart];
+        [self concealEnd];
+    }
+    else
+    {
+        [UIView animateWithDuration:0.25f animations:^{
+            [self concealStart];
+        } completion:^(BOOL finished){
+            [self concealEnd];
+        }];
+    }
+}
+
+- (void)concealStart
+{
+    HBRevealEntry *revealEntry = objc_getAssociatedObject(self, &REVEAL_ENTRY);
+    UIView *containerView = revealEntry->containerView;
+    UIView *contentView = revealEntry->contentView;
+    
+    [containerView sendSubviewToBack:contentView];
+    
+    self.frame = revealEntry->originalFrame;
+}
+
+- (void)concealEnd
+{
+    HBRevealEntry *revealEntry = objc_getAssociatedObject(self, &REVEAL_ENTRY);
+    UIView *containerView = revealEntry->containerView;
+    UIView *contentView = revealEntry->contentView;
+    
+    void (^hideCallback)(UIView *) = revealEntry->hideCallback;
+    if (hideCallback) {
+        hideCallback(contentView);
+    }
+    
+    [containerView.superview addSubview:self];
+    [containerView removeFromSuperview];
+    
+    objc_setAssociatedObject(self, &REVEAL_ENTRY, nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 }
 
 @end
