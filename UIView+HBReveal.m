@@ -22,11 +22,12 @@ static const NSString *REVEAL_ENTRY;
 @interface HBRevealEntry : NSObject
 {
     @package
-    HBRevealSlide slide;
-    UIView *contentView;
-    UIView *coverView;
-    NSValue *originalFrame;
-    void (^hideCallback)(UIView *);
+    HBRevealSlide slide; // assign
+    UIView *contentView; // retain
+    UIView *containerView; // retain
+    UIView *coverView; // retain
+    CGRect originalFrame; // assign
+    void (^hideCallback)(UIView *); // copy
 }
 @end
 
@@ -35,8 +36,8 @@ static const NSString *REVEAL_ENTRY;
 - (void)dealloc
 {
     [contentView release];
+    [containerView release];
     [coverView release];
-    [originalFrame release];
     [hideCallback release];
     [super dealloc];
 }
@@ -65,23 +66,6 @@ static const NSString *REVEAL_ENTRY;
     return CGRectContainsPoint(self.bounds, point);
 }
 
-- (UIView *)createCoverView
-{
-    UIView *coverView = [[UIView alloc] init];
-    
-    UITapGestureRecognizer *tapGestureRecognizer = [[UITapGestureRecognizer alloc] initWithTarget:self
-                                                                                           action:@selector(hide)];
-    [coverView addGestureRecognizer:tapGestureRecognizer];
-    [tapGestureRecognizer release];
-    
-    UIPanGestureRecognizer *panGestureRecognizer = [[UIPanGestureRecognizer alloc] initWithTarget:self
-                                                                                           action:@selector(panHide:)];
-    [coverView addGestureRecognizer:panGestureRecognizer];
-    [panGestureRecognizer release];
-    
-    return [coverView autorelease];
-}
-
 - (void)panHide:(UIPanGestureRecognizer *)gestureRecognizer
 {
     HBRevealEntry *revealEntry = objc_getAssociatedObject(self, &REVEAL_ENTRY);
@@ -99,34 +83,32 @@ static const NSString *REVEAL_ENTRY;
     HBRevealEntry *revealEntry = objc_getAssociatedObject(self, &REVEAL_ENTRY);
     UIView *coverView = revealEntry->coverView;
     
-    for (UIGestureRecognizer *gestureRecognizer in coverView.gestureRecognizers) {
-        [coverView removeGestureRecognizer:gestureRecognizer];
-    }
+    if (![coverView isUserInteractionEnabled]) return;
+    [coverView setUserInteractionEnabled:NO];
     
     [UIView animateWithDuration:0.25f animations:^{
         
         HBRevealEntry *revealEntry = objc_getAssociatedObject(self, &REVEAL_ENTRY);
-        
+        UIView *containerView = revealEntry->containerView;
         UIView *contentView = revealEntry->contentView;
-        [[self superview] sendSubviewToBack:contentView];
         
-        NSValue *originalFrame = revealEntry->originalFrame;
-        self.frame = [originalFrame CGRectValue];
+        [containerView sendSubviewToBack:contentView];
+        
+        self.frame = revealEntry->originalFrame;
         
     } completion:^(BOOL finished){
         
         HBRevealEntry *revealEntry = objc_getAssociatedObject(self, &REVEAL_ENTRY);
+        UIView *containerView = revealEntry->containerView;
         UIView *contentView = revealEntry->contentView;
-        
-        UIView *coverView = revealEntry->coverView;
-        [coverView removeFromSuperview];
         
         void (^hideCallback)(UIView *) = revealEntry->hideCallback;
         if (hideCallback) {
             hideCallback(contentView);
         }
         
-        [contentView removeFromSuperview];
+        [containerView.superview addSubview:self];
+        [containerView removeFromSuperview];
         
         objc_setAssociatedObject(self, &REVEAL_ENTRY, nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     }];
@@ -134,30 +116,33 @@ static const NSString *REVEAL_ENTRY;
 
 - (void)reveal:(UIView *)contentView slide:(HBRevealSlide)slide hideCallback:(void (^)(UIView *))hideCallback
 {
-    if (!contentView)
-    {
+    if (!contentView) {
         [self hide];
         return;
     }
     
-    HBRevealEntry *revealEntry = [[HBRevealEntry alloc] init];
+    HBRevealEntry *revealEntry = objc_getAssociatedObject(self, &REVEAL_ENTRY);
     
-    if (hideCallback) {
-        revealEntry->hideCallback = [hideCallback copy];
+    if (revealEntry)
+    {
+        UIView *containerView = revealEntry->containerView;
+        [containerView.superview addSubview:self];
+        [containerView removeFromSuperview];
+        
+        objc_setAssociatedObject(self, &REVEAL_ENTRY, nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+        revealEntry = nil;
     }
     
     CGRect frame = self.frame;
-    revealEntry->originalFrame = [[NSValue valueWithCGRect:frame] retain];
     
-    UIView *coverView = [self createCoverView];
-    CGRect coverFrame = frame;
-    coverFrame.origin = CGPointZero;
-    coverView.frame = coverFrame;
-    [self addSubview:coverView];
-    revealEntry->coverView = [coverView retain];
+    UIView *coverView = [[UIView alloc] initWithFrame:frame];
+    [self addHideGestures:coverView];
     
-    [[self superview] insertSubview:contentView belowSubview:self];
-    revealEntry->contentView = [contentView retain];
+    UIView *containerView = [[UIView alloc] initWithFrame:frame];
+    [self.superview addSubview:containerView];
+    [containerView addSubview:contentView];
+    [containerView addSubview:self];
+    [containerView addSubview:coverView];
     
     CGRect contentFrame = contentView.frame;
     contentFrame.origin = frame.origin;
@@ -166,6 +151,12 @@ static const NSString *REVEAL_ENTRY;
     }
     contentView.frame = contentFrame;
     
+    revealEntry = [[HBRevealEntry alloc] init];
+    if (hideCallback) revealEntry->hideCallback = [hideCallback copy];
+    revealEntry->contentView = [contentView retain];
+    revealEntry->coverView = [coverView retain];
+    revealEntry->containerView = containerView;
+    revealEntry->originalFrame = frame;
     objc_setAssociatedObject(self, &REVEAL_ENTRY, revealEntry, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     [revealEntry release];
     
@@ -182,10 +173,23 @@ static const NSString *REVEAL_ENTRY;
     } completion:^(BOOL finished){
         
         HBRevealEntry *revealEntry = objc_getAssociatedObject(self, &REVEAL_ENTRY);
+        UIView *containerView = revealEntry->containerView;
         UIView *contentView = revealEntry->contentView;
-        [[self superview] bringSubviewToFront:contentView];
-    
+        [containerView bringSubviewToFront:contentView];
     }];
+}
+
+- (void)addHideGestures:(UIView *)view
+{
+    UITapGestureRecognizer *tapGestureRecognizer = [[UITapGestureRecognizer alloc] initWithTarget:self
+                                                                                           action:@selector(hide)];
+    [view addGestureRecognizer:tapGestureRecognizer];
+    [tapGestureRecognizer release];
+    
+    UIPanGestureRecognizer *panGestureRecognizer = [[UIPanGestureRecognizer alloc] initWithTarget:self
+                                                                                           action:@selector(panHide:)];
+    [view addGestureRecognizer:panGestureRecognizer];
+    [panGestureRecognizer release];
 }
 
 @end
