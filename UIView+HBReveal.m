@@ -66,6 +66,22 @@ static const NSString *REVEAL_ENTRY;
     return CGRectContainsPoint(self.bounds, point);
 }
 
+- (void)revealIfNeeded
+{
+    HBRevealEntry *revealEntry = objc_getAssociatedObject(self, &REVEAL_ENTRY);
+    if (!revealEntry) return;
+    
+    UIView *containerView = revealEntry->containerView;
+    if (self.superview == containerView) return;
+    
+    [self.superview addSubview:containerView];
+    [containerView addSubview:self];
+    [containerView bringSubviewToFront:revealEntry->coverView];
+    [containerView bringSubviewToFront:revealEntry->contentView];
+    
+    [self setRevealFrame:revealEntry];
+}
+
 - (void)reveal:(UIView *)contentView slide:(HBRevealSlide)slide hideCallback:(void (^)(UIView *))hideCallback
 {
     if (!contentView) {
@@ -116,12 +132,7 @@ static const NSString *REVEAL_ENTRY;
     [UIView animateWithDuration:0.25f animations:^{
         
         HBRevealEntry *revealEntry = objc_getAssociatedObject(self, &REVEAL_ENTRY);
-        UIView *contentView = revealEntry->contentView;
-        CGRect contentFrame = contentView.frame;
-        
-        CGRect frame = self.frame;
-        frame.origin.x += (slide == kSlideRight ? 1 : -1 ) *contentFrame.size.width;
-        self.frame = frame;
+        [self setRevealFrame:revealEntry];
         
     } completion:^(BOOL finished){
         
@@ -130,6 +141,19 @@ static const NSString *REVEAL_ENTRY;
         UIView *contentView = revealEntry->contentView;
         [containerView bringSubviewToFront:contentView];
     }];
+}
+
+- (void)setRevealFrame:(HBRevealEntry *)revealEntry
+{
+    UIView *contentView = revealEntry->contentView;
+    CGRect contentFrame = contentView.frame;
+    
+    CGRect frame = self.frame;
+    frame.origin.x += (revealEntry->slide == kSlideRight ? 1 : -1 ) * contentFrame.size.width;
+    self.frame = frame;
+    
+    UIView *coverView = revealEntry->coverView;
+    coverView.frame = frame;
 }
 
 - (void)addHideGestures:(UIView *)view

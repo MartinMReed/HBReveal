@@ -22,6 +22,7 @@ typedef NS_ENUM(NSUInteger, HBRevealSlide) {
 
 @interface UIView (HBReveal)
 
+- (void)revealIfNeeded;
 - (void)conceal:(BOOL)animated;
 - (void)reveal:(UIView *)contentView slide:(HBRevealSlide)slide hideCallback:(void (^)(UIView *))hideCallback;
 

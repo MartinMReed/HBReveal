@@ -10,6 +10,17 @@ UIView *contentView = [[[NSBundle mainBundle] loadNibNamed:@"SidebarView"
 
 // hide the sidebar
 [self.view conceal:YES/*animated*/];
+
+...
+
+- (void)viewDidAppear:(BOOL)animated
+{
+    [super viewDidAppear:animated];
+    
+    // if a new controller is pushed, this controller will reset to the original
+    // view and remove the sidebar, so reshow if it wasn't closed
+    [self.view revealIfNeeded];
+}
 ```
 
 Demo:  
