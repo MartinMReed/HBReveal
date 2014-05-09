@@ -20,25 +20,23 @@
 static const NSString *REVEAL_ENTRY;
 
 @interface HBRevealEntry : NSObject
-{
-    @package
-    HBRevealSlide slide; // assign
-    UIView *contentView; // retain
-    UIView *containerView; // retain
-    UIView *coverView; // retain
-    CGRect originalFrame; // assign
-    void (^hideCallback)(UIView *); // copy
-}
+
+@property (nonatomic, assign) HBRevealSlide slide;
+@property (nonatomic, retain) UIView *contentView;
+@property (nonatomic, retain) UIView *containerView;
+@property (nonatomic, retain) UIView *coverView;
+@property (nonatomic, copy) void (^hideCallback)(UIView *);
+
 @end
 
 @implementation HBRevealEntry
 
 - (void)dealloc
 {
-    [contentView release];
-    [containerView release];
-    [coverView release];
-    [hideCallback release];
+    [_contentView release];
+    [_containerView release];
+    [_coverView release];
+    [_hideCallback release];
     [super dealloc];
 }
 
@@ -52,7 +50,7 @@ static const NSString *REVEAL_ENTRY;
     
     if (revealEntry)
     {
-        UIView *contentView = revealEntry->contentView;
+        UIView *contentView = [revealEntry contentView];
         
         CGRect bounds = self.bounds;
         CGRect containerBounds = [contentView bounds];
@@ -71,13 +69,13 @@ static const NSString *REVEAL_ENTRY;
     HBRevealEntry *revealEntry = objc_getAssociatedObject(self, &REVEAL_ENTRY);
     if (!revealEntry) return;
     
-    UIView *containerView = revealEntry->containerView;
+    UIView *containerView = [revealEntry containerView];
     if (self.superview == containerView) return;
     
     [self.superview addSubview:containerView];
     [containerView addSubview:self];
-    [containerView bringSubviewToFront:revealEntry->coverView];
-    [containerView bringSubviewToFront:revealEntry->contentView];
+    [containerView bringSubviewToFront:[revealEntry coverView]];
+    [containerView bringSubviewToFront:[revealEntry contentView]];
     
     [self setRevealFrame:revealEntry];
 }
@@ -93,7 +91,7 @@ static const NSString *REVEAL_ENTRY;
     
     if (revealEntry)
     {
-        UIView *containerView = revealEntry->containerView;
+        UIView *containerView = [revealEntry containerView];
         [[containerView superview] addSubview:self];
         [containerView removeFromSuperview];
         
@@ -102,11 +100,15 @@ static const NSString *REVEAL_ENTRY;
     }
     
     CGRect frame = self.frame;
+    CGRect originalFrame = frame;
+    
+    frame.origin = CGPointZero;
+    self.frame = frame;
     
     UIView *coverView = [[UIView alloc] initWithFrame:frame];
     [self addHideGestures:coverView];
     
-    UIView *containerView = [[UIView alloc] initWithFrame:frame];
+    UIView *containerView = [[UIView alloc] initWithFrame:originalFrame];
     [self.superview addSubview:containerView];
     [containerView addSubview:contentView];
     [containerView addSubview:self];
@@ -120,12 +122,11 @@ static const NSString *REVEAL_ENTRY;
     [contentView setFrame:contentFrame];
     
     revealEntry = [[HBRevealEntry alloc] init];
-    if (hideCallback) revealEntry->hideCallback = [hideCallback copy];
-    revealEntry->contentView = [contentView retain];
-    revealEntry->coverView = [coverView retain];
-    revealEntry->containerView = containerView;
-    revealEntry->slide = slide;
-    revealEntry->originalFrame = frame;
+    if (hideCallback) [revealEntry setHideCallback:hideCallback];
+    [revealEntry setContentView:contentView];
+    [revealEntry setCoverView:coverView];
+    [revealEntry setContainerView:containerView];
+    [revealEntry setSlide:slide];
     objc_setAssociatedObject(self, &REVEAL_ENTRY, revealEntry, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     [revealEntry release];
     
@@ -136,8 +137,8 @@ static const NSString *REVEAL_ENTRY;
     
     void (^completion)(BOOL finished) = ^(BOOL finished) {
         HBRevealEntry *revealEntry = objc_getAssociatedObject(self, &REVEAL_ENTRY);
-        UIView *containerView = revealEntry->containerView;
-        UIView *contentView = revealEntry->contentView;
+        UIView *containerView = [revealEntry containerView];
+        UIView *contentView = [revealEntry contentView];
         [containerView bringSubviewToFront:contentView];
     };
     
@@ -150,14 +151,14 @@ static const NSString *REVEAL_ENTRY;
 
 - (void)setRevealFrame:(HBRevealEntry *)revealEntry
 {
-    UIView *contentView = revealEntry->contentView;
+    UIView *contentView = [revealEntry contentView];
     CGRect contentFrame = [contentView frame];
     
     CGRect frame = self.frame;
-    frame.origin.x += (revealEntry->slide == kSlideRight ? 1 : -1 ) * contentFrame.size.width;
+    frame.origin.x += ([revealEntry slide] == kSlideRight ? 1 : -1 ) * contentFrame.size.width;
     self.frame = frame;
     
-    UIView *coverView = revealEntry->coverView;
+    UIView *coverView = [revealEntry coverView];
     [coverView setFrame:frame];
 }
 
@@ -185,13 +186,13 @@ static const NSString *REVEAL_ENTRY;
 - (void)handlePan:(UIPanGestureRecognizer *)gestureRecognizer
 {
     HBRevealEntry *revealEntry = objc_getAssociatedObject(self, &REVEAL_ENTRY);
-    UIView *coverView = revealEntry->coverView;
+    UIView *coverView = [revealEntry coverView];
     
     CGPoint translation = [gestureRecognizer translationInView:coverView];
     
     if (fabsf(translation.x) > fabsf(translation.y))
     {
-        HBRevealSlide slide = revealEntry->slide;
+        HBRevealSlide slide = [revealEntry slide];
         
         if ((slide == kSlideLeft && translation.x > 0) ||
             (slide == kSlideRight && translation.x < 0))
@@ -204,10 +205,14 @@ static const NSString *REVEAL_ENTRY;
 - (void)conceal:(BOOL)animated
 {
     HBRevealEntry *revealEntry = objc_getAssociatedObject(self, &REVEAL_ENTRY);
-    UIView *coverView = revealEntry->coverView;
+    UIView *coverView = [revealEntry coverView];
     
     if (![coverView isUserInteractionEnabled]) return;
     [coverView setUserInteractionEnabled:NO];
+    
+    UIView *containerView = [revealEntry containerView];
+    UIView *contentView = [revealEntry contentView];
+    [containerView sendSubviewToBack:contentView];
     
     if (!animated) {
         [self concealStart];
@@ -233,25 +238,24 @@ static const NSString *REVEAL_ENTRY;
 
 - (void)concealStart
 {
-    HBRevealEntry *revealEntry = objc_getAssociatedObject(self, &REVEAL_ENTRY);
-    UIView *containerView = revealEntry->containerView;
-    UIView *contentView = revealEntry->contentView;
-    
-    [containerView sendSubviewToBack:contentView];
-    
-    self.frame = revealEntry->originalFrame;
+    CGRect frame = self.frame;
+    frame.origin = CGPointZero;
+    self.frame = frame;
 }
 
 - (void)concealEnd
 {
     HBRevealEntry *revealEntry = objc_getAssociatedObject(self, &REVEAL_ENTRY);
-    UIView *containerView = revealEntry->containerView;
-    UIView *contentView = revealEntry->contentView;
+    UIView *containerView = [revealEntry containerView];
+    UIView *contentView = [revealEntry contentView];
     
-    void (^hideCallback)(UIView *) = revealEntry->hideCallback;
+    void (^hideCallback)(UIView *) = [revealEntry hideCallback];
     if (hideCallback) {
         hideCallback(contentView);
     }
+    
+    CGRect frame = [containerView frame];
+    self.frame = frame;
     
     [[containerView superview] addSubview:self];
     [containerView removeFromSuperview];
